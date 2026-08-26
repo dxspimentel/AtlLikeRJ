@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitrine Virtual Dinâmica com Carrinho</title>
+    <!-- Tailwind CSS para design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonte Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS para leitura de arquivos Excel (.xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-3 rounded-xl shadow-md">
+                    <i class="fa-solid fa-store text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Vitrine Virtual</h1>
+                    <p class="text-xs text-slate-500">Produtos disponíveis em tempo real</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <!-- Botão do Carrinho -->
+                <button onclick="toggleCartModal()" class="relative inline-flex items-center space-x-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-4 py-2.5 rounded-xl transition shadow-sm border border-indigo-200 text-sm">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="hidden sm:inline">Carrinho</span>
+                    <span id="cartBadge" class="absolute -top-2 -right-2 bg-rose-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md hidden">0</span>
+                </button>
+
+                <!-- Botão discreto para Área Administrativa -->
+                <button onclick="openAdminLoginModal()" class="inline-flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2.5 rounded-xl transition shadow-sm border border-slate-200 text-sm">
+                    <i class="fa-solid fa-lock text-xs text-slate-500"></i>
+                    <span>Área do Lojista</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+            <!-- Barra de busca -->
+            <div class="relative w-full md:w-96">
+                <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Buscar produtos disponíveis..." class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm shadow-sm transition">
+            </div>
+
+            <!-- Filtros por categoria -->
+            <div id="categoryFilters" class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+                <button onclick="filterByCategory('all')" class="category-btn active px-4 py-2 rounded-xl text-sm font-medium bg-indigo-600 text-white shadow-sm transition whitespace-nowrap">Todos</button>
+            </div>
+        </div>
+
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Os cards dos produtos disponíveis serão injetados dinamicamente aqui -->
+        </div>
+
+        <!-- Estado vazio -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
+            <div class="bg-slate-100 text-slate-400 p-4 rounded-full mb-4">
+                <i class="fa-solid fa-box-open text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-700">Nenhum produto disponível no momento</h3>
+            <p class="text-sm text-slate-500 mt-1">Assim que novos itens forem adicionados ao estoque, eles aparecerão aqui.</p>
+        </div>
+    </main>
+
+    <!-- Modal do Carrinho de Compras -->
+    <div id="cartModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-indigo-100 text-indigo-700 p-2 rounded-lg">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Seu Carrinho de Compras</h3>
+                </div>
+                <button onclick="toggleCartModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div id="cartItemsContainer" class="flex-grow overflow-y-auto space-y-3 mb-4 pr-1">
+                <!-- Itens do carrinho inseridos via JS -->
+            </div>
+
+            <div id="cartFooter" class="border-t border-slate-100 pt-4 mt-auto">
+                <div class="flex space-x-3">
+                    <button onclick="toggleCartModal()" class="w-1/2 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition">Continuar Comprando</button>
+                    <button onclick="checkoutViaWhatsApp()" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm py-3 rounded-xl text-sm font-medium transition flex items-center justify-center space-x-2">
+                        <i class="fa-brands fa-whatsapp text-lg"></i>
+                        <span>Enviar Pedido</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login Admin -->
+    <div id="adminLoginModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-900">Acesso Restrito ao Lojista</h3>
+                <button onclick="closeAdminLoginModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-sm text-slate-500 mb-4">Insira a senha de administrador para atualizar a planilha de estoque e configurar o WhatsApp.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Senha</label>
+                    <input type="password" id="adminPasswordInput" placeholder="Digite a senha (padrão: admin123)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button onclick="closeAdminLoginModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">Cancelar</button>
+                    <button onclick="verifyAdminPassword()" class="px-5 py-2.5 rounded-xl text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition">Entrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Painel Admin -->
+    <div id="syncModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 transform transition-all max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-full">Painel Admin Ativo</span>
+                    <h3 class="text-lg font-bold text-slate-900">Gerenciar Estoque e WhatsApp</h3>
+                </div>
+                <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Configuração do WhatsApp -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Número do WhatsApp para Pedidos (com DDD)</label>
+                <div class="flex gap-2">
+                    <input type="text" id="whatsappInput" placeholder="Ex: 5511999999999" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button onclick="saveWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap">Salvar</button>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">Os clientes abrirão o WhatsApp com os itens do carrinho consolidados para este número.</p>
+            </div>
+
+            <p class="text-sm text-slate-500 mb-4">
+                Sua planilha deve conter as colunas: <strong class="text-slate-700">Código</strong>, <strong class="text-slate-700">Nome</strong>, <strong class="text-slate-700">Categoria</strong>, <strong class="text-slate-700">Preço</strong>, <strong class="text-slate-700">Estoque</strong> e <strong class="text-slate-700">Figura</strong>. 
+                <span class="block mt-1 text-indigo-600 font-medium">Apenas itens com estoque maior que 0 aparecem na vitrine.</span>
+            </p>
+
+            <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-indigo-500 transition cursor-pointer relative bg-slate-50">
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" onchange="handleFileUpload(event)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                <div class="flex flex-col items-center">
+                    <div class="bg-white p-4 rounded-full shadow-sm text-indigo-600 mb-3 border border-slate-100">
+                        <i class="fa-solid fa-file-excel text-2xl"></i>
+                    </div>
+                    <span class="text-sm font-semibold text-slate-700">Clique para selecionar ou arraste sua nova planilha Excel</span>
+                    <span class="text-xs text-slate-400 mt-1">Atualize seu estoque instantaneamente</span>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeSyncModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = "admin123";
+        let whatsappNumber = localStorage.getItem('store_whatsapp') || "5511999999999";
+
+        // Catálogo padrão de segurança caso a planilha remota demore
+        let defaultProducts = [
+            { id: "like_38", name: "Ativador de Cachos Ozon Cu...", category: "LINHA LIKE", price: 117.80, stock: 6, image: "https://like-prd.nyc3.digitaloceanspaces.com/uploads/products/images/U4MzWmYWscExvvWHA8H36DMthm9rnySfD7OfZ3k5.png" },
+            { id: "like_39", name: "BB CREAM OZ - MULTIAÇÃO...", category: "LINHA LIKE", price: 149.80, stock: 3, image: "https://like-prd.nyc3.digitaloceanspaces.com/uploads/products/images/7xpYDh9szau9pi2RzzbAiSKHK50uSaFGzNck9Vub.png" },
+            { id: "like_1", name: "BELLYS", category: "LINHA LIKE", price: 137.80, stock: 11, image: "https://like-prd.nyc3.digitaloceanspaces.com/uploads/products/images/nojZy5g18H5yyM130UJrWsT95E4Aq6GpIP5NoxF1.png" },
+            { id: "like_121", name: "CAIXA PARA PRESENTE...", category: "LINHA LIKE", price: 19.80, stock: 6, image: "https://like-prd.nyc3.digitaloceanspaces.com/uploads/products/images/AKWHe6dHf3BePtPVT4Sgl2AaMFAQPZOJdknvIDmi.png" },
+            { id: "like_30", name: "CONDICIONADOR OZON...", category: "LINHA LIKE", price: 89.90, stock: 5, image: "https://like-prd.nyc3.digitaloceanspaces.com/uploads/products/images/IWVcXv0hCDRUadcP7nh5BjDCm6D6XiybJenDBfcc.png" },
+            { id: "like_31", name: "SHAMPOO OZON...", category: "LINHA LIKE", price: 89.90, stock: 4, image: "https://like-prd.nyc3.digitaloceanspaces.com/uploads/products/images/5J4Fkh8AYeyDWFFwcMELKCU2ytuNfpyjOcw8TGTv.png" }
+        ];
+
+        let savedProductsJson = localStorage.getItem('store_products');
+        let products = savedProductsJson ? JSON.parse(savedProductsJson) : defaultProducts;
+
+        let currentCategory = 'all';
+        let cart = [];
+
+        window.onload = function() {
+            // Tenta carregar automaticamente o Estoque.xlsx da mesma pasta no servidor ao abrir
+            loadRemoteExcel();
+        };
+
+        async function loadRemoteExcel() {
+            try {
+                let response = await fetch('Estoque.xlsx');
+                if (response.ok) {
+                    let data = await response.arrayBuffer();
+                    let workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                    let firstSheetName = workbook.SheetNames[0];
+                    let worksheet = workbook.Sheets[firstSheetName];
+                    let json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length > 0) {
+                        products = json.map((item, index) => {
+                            const code = item.Codigo || item.Código || item.SKU || item.id || `PROD-${index + 1}`;
+                            return {
+                                id: String(code),
+                                name: item.Nome || item.Produto || item.name || `Produto ${index + 1}`,
+                                category: item.Categoria || item.category || 'Geral',
+                                price: parseFloat(item.Preco || item.Preço || item.price || 0),
+                                stock: parseInt(item.Estoque || item.Quantidade || item.stock || 0),
+                                image: item.Figura || item.Foto || item.Imagem || item.image || `https://placehold.co/400x400/4f46e5/ffffff?text=${encodeURIComponent(code)}`
+                            };
+                        });
+                        localStorage.setItem('store_products', JSON.stringify(products));
+                    }
+                }
+            } catch (e) {
+                console.log("Usando estoque armazenado localmente ou padrão.");
+            } finally {
+                renderCategories();
+                renderProducts(products);
+                updateCartBadge();
+            }
+        }
+
+        function getAvailableProducts() {
+            return products.filter(p => Number(p.stock) > 0);
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categoryFilters');
+            const available = getAvailableProducts();
+            const categories = ['all', ...new Set(available.map(p => p.category))];
+            
+            let html = `<button onclick="filterByCategory('all')" class="category-btn ${currentCategory === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'} px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap">Todos</button>`;
+            
+            categories.filter(c => c !== 'all').forEach(cat => {
+                const isActive = currentCategory === cat;
+                html += `<button onclick="filterByCategory('${cat}')" class="category-btn ${isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'} px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap">${cat}</button>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderProducts(items) {
+            const grid = document.getElementById('productGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            const availableItems = items.filter(p => Number(p.stock) > 0);
+
+            if (availableItems.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            emptyState.classList.remove('flex');
+            emptyState.classList.add('hidden');
+
+            let html = '';
+            availableItems.forEach(product => {
+                const formattedPrice = Number(product.price).toFixed(2).replace('.', ',');
+                html += `
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col transition hover:shadow-md group">
+                        <div class="relative bg-slate-100 aspect-square overflow-hidden flex items-center justify-center">
+                            <img src="${product.image || 'https://placehold.co/400x400/e2e8f0/64748b?text=' + encodeURIComponent(product.id)}" alt="${product.name}" onerror="this.src='https://placehold.co/400x400/e2e8f0/64748b?text=' + encodeURIComponent('${product.id}')" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <div class="absolute top-3 right-3">
+                                <span class="bg-emerald-100 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">Estoque: ${product.stock}</span>
+                            </div>
+                            <div class="absolute top-3 left-3 bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-mono px-2 py-1 rounded-lg">
+                                SKU: ${product.id}
+                            </div>
+                        </div>
+                        <div class="p-5 flex flex-col flex-grow">
+                            <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">${product.category}</span>
+                            <h3 class="font-bold text-slate-900 text-base mb-2 line-clamp-1">${product.name}</h3>
+                            <div class="mt-auto flex items-center justify-between pt-4 border-t border-slate-100">
+                                <div>
+                                    <span class="text-xs text-slate-400 block">Preço</span>
+                                    <span class="text-lg font-bold text-slate-900">R$ ${formattedPrice}</span>
+                                </div>
+                                <button onclick="addToCart('${product.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 py-2 rounded-xl text-sm font-medium transition flex items-center space-x-2">
+                                    <i class="fa-solid fa-cart-plus text-sm"></i>
+                                    <span>Adicionar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+        }
+
+        function filterByCategory(category) {
+            currentCategory = category;
+            renderCategories();
+            filterProducts();
+        }
+
+        function filterProducts() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const available = getAvailableProducts();
+            
+            let filtered = available.filter(p => {
+                const matchesCategory = currentCategory === 'all' || p.category === currentCategory;
+                const matchesQuery = p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query) || String(p.id).toLowerCase().includes(query);
+                return matchesCategory && matchesQuery;
+            });
+
+            renderProducts(filtered);
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                if (existingItem.quantity < product.stock) {
+                    existingItem.quantity++;
+                } else {
+                    showNotification('Quantidade máxima disponível em estoque atingida.');
+                    return;
+                }
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    stock: product.stock,
+                    quantity: 1
+                });
+            }
+
+            updateCartBadge();
+            showNotification(`"${product.name}" adicionado ao carrinho!`);
+        }
+
+        function updateCartBadge() {
+            const badge = document.getElementById('cartBadge');
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            
+            if (totalItems > 0) {
+                badge.innerText = totalItems;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function toggleCartModal() {
+            const modal = document.getElementById('cartModal');
+            if (modal.classList.contains('hidden')) {
+                renderCartItems();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cartItemsContainer');
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-center text-slate-400">
+                        <i class="fa-solid fa-cart-shopping text-3xl mb-2"></i>
+                        <p class="text-sm">Seu carrinho está vazio.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            cart.forEach((item, index) => {
+                html += `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="flex-grow pr-3">
+                            <span class="text-[10px] font-mono text-indigo-600 block">SKU: ${item.id}</span>
+                            <h4 class="text-sm font-bold text-slate-900 line-clamp-1">${item.name}</h4>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="updateQuantity(${index}, -1)" class="w-7 h-7 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition">
+                                <i class="fa-solid fa-minus text-xs"></i>
+                            </button>
+                            <span class="text-sm font-bold w-6 text-center">${item.quantity}</span>
+                            <button onclick="updateQuantity(${index}, 1)" class="w-7 h-7 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </button>
+                        </div>
+                        <button onclick="removeFromCart(${index})" class="ml-4 text-slate-400 hover:text-rose-600 p-1 transition">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function updateQuantity(index, delta) {
+            const item = cart[index];
+            const product = products.find(p => p.id === item.id);
+            const newQty = item.quantity + delta;
+
+            if (newQty <= 0) {
+                removeFromCart(index);
+            } else if (product && newQty <= product.stock) {
+                item.quantity = newQty;
+                renderCartItems();
+                updateCartBadge();
+            } else {
+                showNotification('Quantidade máxima em estoque atingida.');
+            }
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCartItems();
+            updateCartBadge();
+        }
+
+        function checkoutViaWhatsApp() {
+            if (cart.length === 0) return;
+
+            let message = `Olá! Gostaria de fazer o pedido dos seguintes itens:\n`;
+
+            cart.forEach((item, idx) => {
+                message += `${idx + 1}. *${item.name}* (SKU: ${item.id}) Quantidade: ${item.quantity}x\n`;
+            });
+            
+            const encodedMessage = encodeURIComponent(message.trim());
+            const url = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            window.open(url, '_blank');
+        }
+
+        function showNotification(message) {
+            const existing = document.getElementById('toastNotification');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'toastNotification';
+            toast.className = 'fixed bottom-5 right-5 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl z-50 text-sm font-medium flex items-center space-x-3 transition transform translate-y-2 opacity-0';
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-base"></i><span>${message}</span>`;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function openAdminLoginModal() {
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('adminLoginModal').classList.remove('hidden');
+        }
+
+        function closeAdminLoginModal() {
+            document.getElementById('adminLoginModal').classList.add('hidden');
+        }
+
+        function verifyAdminPassword() {
+            const pass = document.getElementById('adminPasswordInput').value;
+            if (pass === ADMIN_PASSWORD) {
+                closeAdminLoginModal();
+                document.getElementById('whatsappInput').value = whatsappNumber;
+                openSyncModal();
+            } else {
+                showNotification('Senha incorreta! Acesso negado.');
+            }
+        }
+
+        function openSyncModal() {
+            document.getElementById('syncModal').classList.remove('hidden');
+        }
+
+        function closeSyncModal() {
+            document.getElementById('syncModal').classList.add('hidden');
+        }
+
+        function saveWhatsApp() {
+            const val = document.getElementById('whatsappInput').value.trim();
+            if (val) {
+                whatsappNumber = val;
+                localStorage.setItem('store_whatsapp', whatsappNumber);
+                showNotification('Número de WhatsApp atualizado com sucesso!');
+            } else {
+                showNotification('Insira um número válido.');
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length > 0) {
+                        products = json.map((item, index) => {
+                            const code = item.Codigo || item.Código || item.SKU || item.id || `PROD-${index + 1}`;
+                            return {
+                                id: String(code),
+                                name: item.Nome || item.Produto || item.name || `Produto ${index + 1}`,
+                                category: item.Categoria || item.category || 'Geral',
+                                price: parseFloat(item.Preco || item.Preço || item.price || 0),
+                                stock: parseInt(item.Estoque || item.Quantidade || item.stock || 0),
+                                image: item.Figura || item.Foto || item.Imagem || item.image || `https://placehold.co/400x400/4f46e5/ffffff?text=${encodeURIComponent(code)}`
+                            };
+                        });
+
+                        localStorage.setItem('store_products', JSON.stringify(products));
+
+                        currentCategory = 'all';
+                        cart = [];
+                        updateCartBadge();
+                        renderCategories();
+                        renderProducts(products);
+                        closeSyncModal();
+                        showNotification('Estoque e vitrine atualizados com sucesso!');
+                    } else {
+                        showNotification('O arquivo parece estar vazio.');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('Erro ao processar o arquivo Excel.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>
