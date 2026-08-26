@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vitrine Virtual Dinâmica com Carrinho</title>
+    <title>Catálogo Virtual</title>
     <!-- Tailwind CSS para design moderno e responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Fonte Inter -->
@@ -25,7 +25,7 @@
                     <i class="fa-solid fa-store text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Vitrine Virtual</h1>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Catálogo Virtual</h1>
                     <p class="text-xs text-slate-500">Produtos disponíveis em tempo real</p>
                 </div>
             </div>
@@ -36,12 +36,6 @@
                     <i class="fa-solid fa-cart-shopping"></i>
                     <span class="hidden sm:inline">Carrinho</span>
                     <span id="cartBadge" class="absolute -top-2 -right-2 bg-rose-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md hidden">0</span>
-                </button>
-
-                <!-- Botão discreto para Área Administrativa -->
-                <button onclick="openAdminLoginModal()" class="inline-flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2.5 rounded-xl transition shadow-sm border border-slate-200 text-sm">
-                    <i class="fa-solid fa-lock text-xs text-slate-500"></i>
-                    <span>Área do Lojista</span>
                 </button>
             </div>
         </div>
@@ -75,7 +69,6 @@
         </div>
     </main>
 
-    <!-- Modal do Carrinho de Compras -->
     <div id="cartModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
             <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
@@ -106,81 +99,11 @@
         </div>
     </div>
 
-    <!-- Modal de Login Admin -->
-    <div id="adminLoginModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-slate-900">Acesso Restrito ao Lojista</h3>
-                <button onclick="closeAdminLoginModal()" class="text-slate-400 hover:text-slate-600 p-1">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            <p class="text-sm text-slate-500 mb-4">Insira a senha de administrador para atualizar a planilha de estoque e configurar o WhatsApp.</p>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Senha</label>
-                    <input type="password" id="adminPasswordInput" placeholder="Digite a senha (padrão: admin123)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                </div>
-                <div class="flex justify-end space-x-3 pt-2">
-                    <button onclick="closeAdminLoginModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">Cancelar</button>
-                    <button onclick="verifyAdminPassword()" class="px-5 py-2.5 rounded-xl text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition">Entrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Painel Admin -->
-    <div id="syncModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 transform transition-all max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-2">
-                    <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-full">Painel Admin Ativo</span>
-                    <h3 class="text-lg font-bold text-slate-900">Gerenciar Estoque e WhatsApp</h3>
-                </div>
-                <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-600 p-1">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <!-- Configuração do WhatsApp -->
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
-                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Número do WhatsApp para Pedidos (com DDD)</label>
-                <div class="flex gap-2">
-                    <input type="text" id="whatsappInput" placeholder="Ex: 5511999999999" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button onclick="saveWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap">Salvar</button>
-                </div>
-                <p class="text-[11px] text-slate-500 mt-1">Os clientes abrirão o WhatsApp com os itens do carrinho consolidados para este número.</p>
-            </div>
-
-            <p class="text-sm text-slate-500 mb-4">
-                Sua planilha deve conter as colunas: <strong class="text-slate-700">Código</strong>, <strong class="text-slate-700">Nome</strong>, <strong class="text-slate-700">Categoria</strong>, <strong class="text-slate-700">Preço</strong>, <strong class="text-slate-700">Estoque</strong> e <strong class="text-slate-700">Figura</strong>. 
-                <span class="block mt-1 text-indigo-600 font-medium">Apenas itens com estoque maior que 0 aparecem na vitrine.</span>
-            </p>
-
-            <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-indigo-500 transition cursor-pointer relative bg-slate-50">
-                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" onchange="handleFileUpload(event)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                <div class="flex flex-col items-center">
-                    <div class="bg-white p-4 rounded-full shadow-sm text-indigo-600 mb-3 border border-slate-100">
-                        <i class="fa-solid fa-file-excel text-2xl"></i>
-                    </div>
-                    <span class="text-sm font-semibold text-slate-700">Clique para selecionar ou arraste sua nova planilha Excel</span>
-                    <span class="text-xs text-slate-400 mt-1">Atualize seu estoque instantaneamente</span>
-                </div>
-            </div>
-
-            <div class="mt-6 flex justify-end space-x-3">
-                <button onclick="closeSyncModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">Fechar</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        const ADMIN_PASSWORD = "admin123";
-        // Atualizado para o número padrão solicitado
-        let whatsappNumber = localStorage.getItem('store_whatsapp') || "552139270865";
+        // Número de WhatsApp oficial fixo e blindado contra cache
+        const WHATSAPP_NUMBER = "552139270865";
 
-        // Catálogo de estoque pré-carregado embutido para visualização imediata por qualquer cliente
+        // Catálogo padrão de segurança caso a planilha remota demore
         let defaultProducts = [
             { id: "like_38", name: "Ativador de Cachos Ozon Cu...", category: "LINHA LIKE", price: 117.80, stock: 6, image: "https://like-prd.nyc3.digitaloceanspaces.com/uploads/products/images/U4MzWmYWscExvvWHA8H36DMthm9rnySfD7OfZ3k5.png" },
             { id: "like_39", name: "BB CREAM OZ - MULTIAÇÃO...", category: "LINHA LIKE", price: 149.80, stock: 3, image: "https://like-prd.nyc3.digitaloceanspaces.com/uploads/products/images/7xpYDh9szau9pi2RzzbAiSKHK50uSaFGzNck9Vub.png" },
@@ -190,18 +113,46 @@
             { id: "like_31", name: "SHAMPOO OZON...", category: "LINHA LIKE", price: 89.90, stock: 4, image: "https://like-prd.nyc3.digitaloceanspaces.com/uploads/products/images/5J4Fkh8AYeyDWFFwcMELKCU2ytuNfpyjOcw8TGTv.png" }
         ];
 
-        // Carrega do localStorage salvo pelo lojista ou usa o padrão embutido
-        let savedProductsJson = localStorage.getItem('store_products');
-        let products = savedProductsJson ? JSON.parse(savedProductsJson) : defaultProducts;
-
+        let products = defaultProducts;
         let currentCategory = 'all';
         let cart = [];
 
         window.onload = function() {
-            renderCategories();
-            renderProducts(products);
-            updateCartBadge();
+            loadRemoteExcel();
         };
+
+        async function loadRemoteExcel() {
+            try {
+                let response = await fetch('Estoque.xlsx?' + new Date().getTime());
+                if (response.ok) {
+                    let data = await response.arrayBuffer();
+                    let workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                    let firstSheetName = workbook.SheetNames[0];
+                    let worksheet = workbook.Sheets[firstSheetName];
+                    let json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length > 0) {
+                        products = json.map((item, index) => {
+                            const code = item.Codigo || item.Código || item.SKU || item.id || `PROD-${index + 1}`;
+                            return {
+                                id: String(code),
+                                name: item.Nome || item.Produto || item.name || `Produto ${index + 1}`,
+                                category: item.Categoria || item.category || 'Geral',
+                                price: parseFloat(item.Preco || item.Preço || item.price || 0),
+                                stock: parseInt(item.Estoque || item.Quantidade || item.stock || 0),
+                                image: item.Figura || item.Foto || item.Imagem || item.image || `https://placehold.co/400x400/4f46e5/ffffff?text=${encodeURIComponent(code)}`
+                            };
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log("Usando estoque padrão embutido.");
+            } finally {
+                renderCategories();
+                renderProducts(products);
+                updateCartBadge();
+            }
+        }
 
         function getAvailableProducts() {
             return products.filter(p => Number(p.stock) > 0);
@@ -413,7 +364,7 @@
             });
             
             const encodedMessage = encodeURIComponent(message.trim());
-            const url = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
             window.open(url, '_blank');
         }
 
@@ -432,92 +383,6 @@
                 toast.classList.add('translate-y-2', 'opacity-0');
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
-        }
-
-        function openAdminLoginModal() {
-            document.getElementById('adminPasswordInput').value = '';
-            document.getElementById('adminLoginModal').classList.remove('hidden');
-        }
-
-        function closeAdminLoginModal() {
-            document.getElementById('adminLoginModal').classList.add('hidden');
-        }
-
-        function verifyAdminPassword() {
-            const pass = document.getElementById('adminPasswordInput').value;
-            if (pass === ADMIN_PASSWORD) {
-                closeAdminLoginModal();
-                document.getElementById('whatsappInput').value = whatsappNumber;
-                openSyncModal();
-            } else {
-                showNotification('Senha incorreta! Acesso negado.');
-            }
-        }
-
-        function openSyncModal() {
-            document.getElementById('syncModal').classList.remove('hidden');
-        }
-
-        function closeSyncModal() {
-            document.getElementById('syncModal').classList.add('hidden');
-        }
-
-        function saveWhatsApp() {
-            const val = document.getElementById('whatsappInput').value.trim();
-            if (val) {
-                whatsappNumber = val;
-                localStorage.setItem('store_whatsapp', whatsappNumber);
-                showNotification('Número de WhatsApp atualizado com sucesso!');
-            } else {
-                showNotification('Insira um número válido.');
-            }
-        }
-
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet);
-
-                    if (json.length > 0) {
-                        products = json.map((item, index) => {
-                            const code = item.Codigo || item.Código || item.SKU || item.id || `PROD-${index + 1}`;
-                            return {
-                                id: String(code),
-                                name: item.Nome || item.Produto || item.name || `Produto ${index + 1}`,
-                                category: item.Categoria || item.category || 'Geral',
-                                price: parseFloat(item.Preco || item.Preço || item.price || 0),
-                                stock: parseInt(item.Estoque || item.Quantidade || item.stock || 0),
-                                image: item.Figura || item.Foto || item.Imagem || item.image || `https://placehold.co/400x400/4f46e5/ffffff?text=${encodeURIComponent(code)}`
-                            };
-                        });
-
-                        // Salva permanentemente no navegador para sincronizar a sessão
-                        localStorage.setItem('store_products', JSON.stringify(products));
-
-                        currentCategory = 'all';
-                        cart = [];
-                        updateCartBadge();
-                        renderCategories();
-                        renderProducts(products);
-                        closeSyncModal();
-                        showNotification('Estoque e vitrine atualizados com sucesso!');
-                    } else {
-                        showNotification('O arquivo parece estar vazio.');
-                    }
-                } catch (error) {
-                    console.error(error);
-                    showNotification('Erro ao processar o arquivo Excel.');
-                }
-            };
-            reader.readAsArrayBuffer(file);
         }
     </script>
 </body>
